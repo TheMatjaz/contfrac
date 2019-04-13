@@ -5,6 +5,9 @@
 
 from distutils.core import setup
 
+# noinspection PyUnresolvedReferences
+import setuptools
+
 setup(
     name='contfrac',
     version='1.0.0',
@@ -13,8 +16,17 @@ setup(
     author='Matjaž Guštin',
     author_email='dev@matjaz.it',
     url='https://github.com/TheMatjaz/contfrac',
-    py_modules=['contfrac'],
-    keywords=['continued', 'fraction', 'fractions', 'convergent', 'rational'],
+    license='BSD',
+    py_modules=[
+        'contfrac',
+    ],
+    keywords=[
+        'continued',
+        'fraction',
+        'fractions',
+        'convergent',
+        'rational',
+    ],
     classifiers=[
         'Development Status :: Production/Stable',
         'Intended Audience :: Developers',
@@ -27,5 +39,5 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    python_requires='>=3.4, <4',
+    python_requires='>=3',
 )
