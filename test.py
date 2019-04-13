@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Unit tests of contfrac.py"""
+
 import fractions
 import math
 import typing
@@ -211,3 +213,38 @@ class TestConvergents(unittest.TestCase):
         expected = (1, 1)
         result = contfrac.convergent(x, 1)
         self.assertTupleEqual(expected, result)
+
+class TestExampleUsage(unittest.TestCase):
+    def test_example_usage_as_in_readme(self):
+        import contfrac
+        value = 415/93
+        coefficients = list(contfrac.continued_fraction(value))
+        print(coefficients)
+        expression = contfrac.arithmetical_expr(coefficients)
+        print('Value: {:f} = {:s}'.format(value, expression))
+        eval_value = contfrac.evaluate(coefficients)
+        print(eval_value, value)
+        convergents = list(contfrac.convergents(value))
+        print(convergents)
+
+    def test_example_high_accuracy(self):
+        import contfrac
+        value = (415, 93)
+        coefficients = list(contfrac.continued_fraction(value))
+        print(coefficients)
+        expression = contfrac.arithmetical_expr(coefficients)
+        print('Value: {:} = {:s}'.format(value, expression))
+        eval_value = contfrac.evaluate(coefficients)
+        print(eval_value, value[0]/value[1])
+        convergents = list(contfrac.convergents(value))
+        print(convergents)
+
+    def test_example_irrational(self):
+        import contfrac
+        import math
+        coefficients = list(contfrac.continued_fraction(math.e, maxlen=10))
+        print(coefficients)
+        convergent = contfrac.convergent(math.e, 3)
+        print(convergent, convergent[0]/convergent[1], math.e)
+        convergent = contfrac.convergent(math.e, 7)
+        print(convergent, convergent[0]/convergent[1], math.e)

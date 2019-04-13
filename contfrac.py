@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Continued fractions and convergents library.
+
+Continued fractions are a representation of numbers expressed as recursive
+sums of integer parts and reciprocals of other numbers.
+"""
+
 import fractions
 import typing
 
@@ -197,10 +203,8 @@ def convergent(x, grade):
     Args:
         x (Union[Tuple[int,int], float, int, fractions.Fraction]): the value
             to compute the convergents of.
-        max_grade (int): upper limit to the grade of the produced convergents.
-            The first convergent has grade 0 so the amount of yielded values
-            is ``max_grade + 1``. A higher grade convergent approximates
-            better the ``x`` value.
+        grade (int): the grade of the produced convergent. A higher grade
+            convergent approximates better the ``x`` value.
 
     Returns:
         Tuple[int, int]: pair (numerator, denominator) as rational number
