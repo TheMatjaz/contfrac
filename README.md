@@ -2,7 +2,9 @@ ContFrac
 ===============================================================================
 
 Continued fractions are a representation of numbers expressed as recursive
-sums of integer parts and reciprocals of other numbers.
+sums of integer parts and reciprocals of other numbers. _ContFrac_ is a
+pure-Python3 lightweight module to compute and evaluate continued fractions,
+as well as using them to approximate any number.  
 
 
 Features

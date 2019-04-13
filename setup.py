@@ -9,10 +9,11 @@ from distutils.core import setup
 import setuptools
 
 setup(
-    name='contfrac',
+    name='ContFrac',
     version='1.0.0',
-    description='Continued fractions library',
+    description='Continued fractions and convergents',
     long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     author='Matjaž Guštin',
     author_email='dev@matjaz.it',
     url='https://github.com/TheMatjaz/contfrac',
