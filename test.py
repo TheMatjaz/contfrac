@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""Unit tests of contfrac.py"""
+
+import fractions
+import math
+import typing
 import unittest
 
 import contfrac
@@ -31,7 +36,7 @@ class TestEvaluateContfrac(unittest.TestCase):
         }
         for input_value, expected_output in test_values.items():
             with self.subTest(contfrac_of=input_value):
-                result = contfrac.value_finite(input_value)
+                result = contfrac.evaluate(input_value)
                 self.assertAlmostEqual(expected_output, result, places=6)
 
     def test_evaluate_continued_fraction_with_zero_end(self):
@@ -44,13 +49,13 @@ class TestEvaluateContfrac(unittest.TestCase):
         for value in values:
             with self.subTest(input_value=value):
                 with self.assertRaises(ZeroDivisionError):
-                    contfrac.value_finite(value)
+                    contfrac.evaluate(value)
 
     def test_evaluate_continued_fraction_unsupported_type_raises(self):
-        self.assertRaises(TypeError, contfrac.value_finite, None)
-        self.assertRaises(TypeError, contfrac.value_finite, 1)
-        self.assertRaises(TypeError, contfrac.value_finite, 1.1)
-        self.assertRaises(TypeError, contfrac.value_finite, 'hello')
+        self.assertRaises(TypeError, contfrac.evaluate, None)
+        self.assertRaises(TypeError, contfrac.evaluate, 1)
+        self.assertRaises(TypeError, contfrac.evaluate, 1.1)
+        self.assertRaises(TypeError, contfrac.evaluate, 'hello')
 
 
 class TestArithmeticExpression(unittest.TestCase):
@@ -97,3 +102,149 @@ class TestArithmeticExpression(unittest.TestCase):
                 expected_output = expected_default.replace(' ', '')
                 expected_output = expected_output.replace('1/', '1.0/')
                 self.assertEqual(expected_output, result)
+
+
+class TestContfracComputation(unittest.TestCase):
+    def test_continued_fraction_is_generators(self):
+        result = contfrac.continued_fraction(1)
+        self.assertIsInstance(result, typing.Generator)
+
+    def test_continued_fraction_legal_values(self):
+        test_values = {
+            # Integers
+            0: [0],
+            1: [1],
+            123: [123],
+            -1: [-1],
+            -123: [-123],
+
+            # Tuples: (nominator, denominator)
+            (649, 200): [3, 4, 12, 4],
+            (415, 93): [4, 2, 6, 7],
+            (-649, 200): [-4, 1, 3, 12, 4],
+            (415, -93): [-5, 1, 1, 6, 7],
+
+            # Fractions
+            fractions.Fraction(649, 200): [3, 4, 12, 4],
+            fractions.Fraction(415, 93): [4, 2, 6, 7],
+            fractions.Fraction(-649, 200): [-4, 1, 3, 12, 4],
+            fractions.Fraction(415, -93): [-5, 1, 1, 6, 7],
+
+            # Floats
+            649 / 200: [3, 4, 12, 4],
+            -649 / 200: [-3, -4, -12, -4],
+            415 / 93: [4, 2, 6, 7],
+            0.84375: [0, 1, 5, 2, 2],
+        }
+        for input_value, expected_output in test_values.items():
+            with self.subTest(contfrac_of=input_value):
+                result = list(contfrac.continued_fraction(input_value))
+                self.assertListEqual(expected_output, result)
+                with self.subTest(evaluating_contfrac_of=input_value):
+                    if isinstance(input_value, tuple):
+                        input_value = input_value[0] / input_value[1]
+                    elif isinstance(input_value, fractions.Fraction):
+                        input_value = float(input_value)
+                    evaluated = contfrac.evaluate(result)
+                    self.assertAlmostEqual(input_value, evaluated, delta=1e-8)
+
+    def test_continued_fraction_illegal_maxlen(self):
+        self.assertRaises(ValueError, contfrac.continued_fraction, 2.2,
+                          maxlen=-1)
+        self.assertRaises(ValueError, contfrac.continued_fraction, 2.2,
+                          maxlen=0)
+        list(contfrac.continued_fraction(2.2, maxlen=1))
+
+    def test_continued_fraction_unsupported_type_raises(self):
+        self.assertRaises(TypeError, contfrac.continued_fraction, None)
+        self.assertRaises(TypeError, contfrac.continued_fraction, 'hello')
+        self.assertRaises(TypeError, contfrac.continued_fraction, b'hello')
+        self.assertRaises(TypeError, contfrac.continued_fraction, dict())
+
+    def test_continued_fraction_golden_ratio(self):
+        golden_ratio = (1 + math.sqrt(5)) / 2
+        expected = [1] * 40
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=2))
+        self.assertListEqual(expected[:2], result)
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=20))
+        self.assertListEqual(expected[:20], result)
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=31))
+        self.assertListEqual(expected[:31], result)
+
+    def test_rounding_errors(self):
+        golden_ratio = (1 + math.sqrt(5)) / 2
+        as_ratio = golden_ratio.as_integer_ratio()
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=50))
+        self.assertNotEqual([1] * 50, result)
+        evaluated_value = contfrac.evaluate(result)
+        self.assertEqual(golden_ratio, evaluated_value)
+        result = list(contfrac.continued_fraction(as_ratio, maxlen=50))
+        self.assertNotEqual([1] * 50, result)
+        evaluated_value = contfrac.evaluate(result)
+        self.assertEqual(as_ratio, evaluated_value.as_integer_ratio())
+
+
+class TestConvergents(unittest.TestCase):
+    def test_convergents(self):
+        x = 0.84375
+        expected = [(0, 1), (1, 1), (5, 6), (11, 13), (27, 32)]
+        result = list(contfrac.convergents(x))
+        self.assertListEqual(expected, result)
+        x = math.sqrt(9073)
+        expected = [(95, 1), (286, 3), (381, 4), (10192, 107), (20765, 218)]
+        result = list(contfrac.convergents(x, max_grade=4))
+        self.assertListEqual(expected, result)
+        x = (6792605526025, 9449868410449)
+        expected = [(0, 1), (1, 1), (2, 3), (3, 4), (5, 7), (18, 25), (23, 32),
+                    (409, 569), (1659, 2308)]
+        result = list(contfrac.convergents(x, max_grade=8))
+        self.assertListEqual(expected, result)
+
+    def test_convergent(self):
+        x = 0.84375
+        expected = (11, 13)
+        result = contfrac.convergent(x, 3)
+        self.assertTupleEqual(expected, result)
+        x = math.sqrt(9073)
+        expected = (381, 4)
+        result = contfrac.convergent(x, 2)
+        self.assertTupleEqual(expected, result)
+        x = (6792605526025, 9449868410449)
+        expected = (1, 1)
+        result = contfrac.convergent(x, 1)
+        self.assertTupleEqual(expected, result)
+
+class TestExampleUsage(unittest.TestCase):
+    def test_example_usage_as_in_readme(self):
+        import contfrac
+        value = 415/93
+        coefficients = list(contfrac.continued_fraction(value))
+        print(coefficients)
+        expression = contfrac.arithmetical_expr(coefficients)
+        print('Value: {:f} = {:s}'.format(value, expression))
+        eval_value = contfrac.evaluate(coefficients)
+        print(eval_value, value)
+        convergents = list(contfrac.convergents(value))
+        print(convergents)
+
+    def test_example_high_accuracy(self):
+        import contfrac
+        value = (415, 93)
+        coefficients = list(contfrac.continued_fraction(value))
+        print(coefficients)
+        expression = contfrac.arithmetical_expr(coefficients)
+        print('Value: {:} = {:s}'.format(value, expression))
+        eval_value = contfrac.evaluate(coefficients)
+        print(eval_value, value[0]/value[1])
+        convergents = list(contfrac.convergents(value))
+        print(convergents)
+
+    def test_example_irrational(self):
+        import contfrac
+        import math
+        coefficients = list(contfrac.continued_fraction(math.e, maxlen=10))
+        print(coefficients)
+        convergent = contfrac.convergent(math.e, 3)
+        print(convergent, convergent[0]/convergent[1], math.e)
+        convergent = contfrac.convergent(math.e, 7)
+        print(convergent, convergent[0]/convergent[1], math.e)
