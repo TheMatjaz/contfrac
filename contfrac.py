@@ -10,6 +10,8 @@ sums of integer parts and reciprocals of other numbers.
 import fractions
 import typing
 
+__VERSION__ = '1.0.0'
+
 
 def continued_fraction(x, maxlen=30):
     """Computes the continued fraction of a number ``x`` expressed in many

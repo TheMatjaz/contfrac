@@ -16,6 +16,16 @@ Features
 - Generates the arithmetical expression as string of a continued fraction.
 
 
+Installation
+----------------------------------------
+
+```bash
+pip install contfrac
+```
+
+or just include the `contfrac.py` file in your project (copy-paste).
+
+
 Example usage
 ----------------------------------------
 
