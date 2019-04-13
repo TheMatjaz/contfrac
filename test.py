@@ -3,6 +3,7 @@
 
 import fractions
 import math
+import typing
 import unittest
 
 import contfrac
@@ -102,6 +103,10 @@ class TestArithmeticExpression(unittest.TestCase):
 
 
 class TestContfracComputation(unittest.TestCase):
+    def test_continued_fraction_is_generators(self):
+        result = contfrac.continued_fraction(1)
+        self.assertIsInstance(result, typing.Generator)
+
     def test_continued_fraction_legal_values(self):
         test_values = {
             # Integers
@@ -131,7 +136,7 @@ class TestContfracComputation(unittest.TestCase):
         }
         for input_value, expected_output in test_values.items():
             with self.subTest(contfrac_of=input_value):
-                result = contfrac.continued_fraction(input_value)
+                result = list(contfrac.continued_fraction(input_value))
                 self.assertListEqual(expected_output, result)
                 with self.subTest(evaluating_contfrac_of=input_value):
                     if isinstance(input_value, tuple):
@@ -146,7 +151,7 @@ class TestContfracComputation(unittest.TestCase):
                           maxlen=-1)
         self.assertRaises(ValueError, contfrac.continued_fraction, 2.2,
                           maxlen=0)
-        contfrac.continued_fraction(2.2, maxlen=1)
+        list(contfrac.continued_fraction(2.2, maxlen=1))
 
     def test_continued_fraction_unsupported_type_raises(self):
         self.assertRaises(TypeError, contfrac.continued_fraction, None)
@@ -157,21 +162,52 @@ class TestContfracComputation(unittest.TestCase):
     def test_continued_fraction_golden_ratio(self):
         golden_ratio = (1 + math.sqrt(5)) / 2
         expected = [1] * 40
-        result = contfrac.continued_fraction(golden_ratio, maxlen=2)
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=2))
         self.assertListEqual(expected[:2], result)
-        result = contfrac.continued_fraction(golden_ratio, maxlen=20)
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=20))
         self.assertListEqual(expected[:20], result)
-        result = contfrac.continued_fraction(golden_ratio, maxlen=31)
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=31))
         self.assertListEqual(expected[:31], result)
 
     def test_rounding_errors(self):
         golden_ratio = (1 + math.sqrt(5)) / 2
         as_ratio = golden_ratio.as_integer_ratio()
-        result = contfrac.continued_fraction(golden_ratio, maxlen=50)
+        result = list(contfrac.continued_fraction(golden_ratio, maxlen=50))
         self.assertNotEqual([1] * 50, result)
         evaluated_value = contfrac.evaluate(result)
         self.assertEqual(golden_ratio, evaluated_value)
-        result = contfrac.continued_fraction(as_ratio, maxlen=50)
+        result = list(contfrac.continued_fraction(as_ratio, maxlen=50))
         self.assertNotEqual([1] * 50, result)
         evaluated_value = contfrac.evaluate(result)
         self.assertEqual(as_ratio, evaluated_value.as_integer_ratio())
+
+
+class TestConvergents(unittest.TestCase):
+    def test_convergents(self):
+        x = 0.84375
+        expected = [(0, 1), (1, 1), (5, 6), (11, 13), (27, 32)]
+        result = list(contfrac.convergents(x))
+        self.assertListEqual(expected, result)
+        x = math.sqrt(9073)
+        expected = [(95, 1), (286, 3), (381, 4), (10192, 107), (20765, 218)]
+        result = list(contfrac.convergents(x, max_grade=4))
+        self.assertListEqual(expected, result)
+        x = (6792605526025, 9449868410449)
+        expected = [(0, 1), (1, 1), (2, 3), (3, 4), (5, 7), (18, 25), (23, 32),
+                    (409, 569), (1659, 2308)]
+        result = list(contfrac.convergents(x, max_grade=8))
+        self.assertListEqual(expected, result)
+
+    def test_convergent(self):
+        x = 0.84375
+        expected = (11, 13)
+        result = contfrac.convergent(x, 3)
+        self.assertTupleEqual(expected, result)
+        x = math.sqrt(9073)
+        expected = (381, 4)
+        result = contfrac.convergent(x, 2)
+        self.assertTupleEqual(expected, result)
+        x = (6792605526025, 9449868410449)
+        expected = (1, 1)
+        result = contfrac.convergent(x, 1)
+        self.assertTupleEqual(expected, result)

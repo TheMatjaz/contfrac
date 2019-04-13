@@ -7,9 +7,10 @@ import typing
 
 def continued_fraction(x, maxlen=30):
     """Computes the continued fraction of a number ``x`` expressed in many
-    types, including floats, tuples and Fractions.
+    types, including floats, tuples and Fractions, generating the coefficients
+    iteratively.
 
-    The result for a number ``x`` will be the list of coefficients
+    The result for a number ``x`` will be the sequence of coefficients
     ``[a, b, c, d, ...]```:
 
                            1
@@ -43,23 +44,23 @@ def continued_fraction(x, maxlen=30):
     Args:
         x (Union[Tuple[int,int], float, int, fractions.Fraction]): the value
             to compute the continued fraction of.
-        maxlen (int): upper limit to the length of the produced list,
+        maxlen (int): upper limit to the amount of the produced value,
             especially useful when computing continued fractions of irrational
             numbers.
 
     Returns:
-        List[int]: continued fraction
+        Generator[int, None, None]: continued fraction generated dynamically
     """
     if maxlen <= 0:
         raise ValueError('maxlen must be positive.')
     elif isinstance(x, int):
-        return list(__int_cont_frac(x, 1, max_amount=1))
+        return __int_cont_frac(x, 1, max_amount=1)
     elif isinstance(x, float):
-        return list(__float_cont_frac(x, maxlen))
+        return __float_cont_frac(x, maxlen)
     elif isinstance(x, fractions.Fraction):
-        return list(__int_cont_frac(x.numerator, x.denominator, maxlen))
+        return __int_cont_frac(x.numerator, x.denominator, maxlen)
     elif isinstance(x, (tuple, list)):
-        return list(__int_cont_frac(x[0], x[1], maxlen))
+        return __int_cont_frac(x[0], x[1], maxlen)
     else:
         raise TypeError('Unsupported input type {:}'.format(type(x)))
 
@@ -150,3 +151,62 @@ def arithmetical_expr(cont_frac, with_spaces=True, force_floats=False):
     else:
         joiner += '1/('
     return joiner.join(parts) + ')' * i
+
+
+def convergents(x, max_grade=10):
+    """Computes the sequence of rational approximations of ``x`` up to the
+    given grade.
+
+    Warning:
+        The same warning as for ``continued_fraction()`` applies regarding
+        floating point rounding errors.
+
+    Args:
+        x (Union[Tuple[int,int], float, int, fractions.Fraction]): the value
+            to compute the convergents of.
+        max_grade (int): upper limit to the grade of the produced convergents.
+            The first convergent has grade 0 so the amount of yielded values
+            is ``max_grade + 1``. A higher grade convergent approximates
+            better the ``x`` value.
+
+    Returns:
+        Generator[Tuple[int, int], None, None]: sequence of (numerator,
+            denominator) rational numbers approximating ``x``.
+    """
+    numerator_2_ago = 0
+    numerator_1_ago = 1
+    denominator_2_ago = 1
+    denominator_1_ago = 0
+    for coefficient in continued_fraction(x, maxlen=max_grade + 1):
+        numerator = coefficient * numerator_1_ago + numerator_2_ago
+        numerator_2_ago = numerator_1_ago
+        numerator_1_ago = numerator
+        denominator = coefficient * denominator_1_ago + denominator_2_ago
+        denominator_2_ago = denominator_1_ago
+        denominator_1_ago = denominator
+        yield numerator, denominator
+
+
+def convergent(x, grade):
+    """Computes the rational approximation of ``x`` of the provided grade.
+
+    Warning:
+        The same warning as for ``continued_fraction()`` applies regarding
+        floating point rounding errors.
+
+    Args:
+        x (Union[Tuple[int,int], float, int, fractions.Fraction]): the value
+            to compute the convergents of.
+        max_grade (int): upper limit to the grade of the produced convergents.
+            The first convergent has grade 0 so the amount of yielded values
+            is ``max_grade + 1``. A higher grade convergent approximates
+            better the ``x`` value.
+
+    Returns:
+        Tuple[int, int]: pair (numerator, denominator) as rational number
+            approximating ``x``.
+    """
+    element = None
+    for element in convergents(x, max_grade=grade):
+        pass
+    return element
